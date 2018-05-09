@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Translator</string>
+    <string name="text_to_speech_username">53f98adf-7ca7-4dd2-b6f0-a93024500b87</string>
+    <string name="text_to_speech_password">CwLvKTCgl1UB</string>
+
+    <string name="language_translator_username">24cdfa43-0b51-4606-b7ca-b59ba96ccf82</string>
+    <string name="language_translator_password">BndrnBV8aY8I</string>
+
+    <string name="speech_to_text_username">af1c2eab-667f-4416-a669-efef5982923d</string>
+    <string name="speech_to_text_password">YNkORoEo8KwS</string>
+</resources>
