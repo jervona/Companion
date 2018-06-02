@@ -1,5 +1,7 @@
 <resources>
-    <string name="app_name">Translator</string>
+    <string name="app_name">Companion</string>
+
+
     <string name="text_to_speech_username">53f98adf-7ca7-4dd2-b6f0-a93024500b87</string>
     <string name="text_to_speech_password">CwLvKTCgl1UB</string>
 
@@ -8,4 +10,191 @@
 
     <string name="speech_to_text_username">af1c2eab-667f-4416-a669-efef5982923d</string>
     <string name="speech_to_text_password">YNkORoEo8KwS</string>
+
+
+
+    <array name="soruce_language_array">
+        <item>Arabic</item>
+        <item>UK English</item>
+        <item>US English</item>
+        <item>Spanish</item>
+        <item>French</item>
+        <item>Japanese</item>
+        <item>Korean</item>
+        <item>Brazilian Portuguese</item>
+        <item>Mandarin</item>
+    </array>
+
+    <array name="Broadband_model_ibm_array">
+        <item>ar-AR_BroadbandModel</item>
+        <item>en-GB_BroadbandModel</item>
+        <item>en-US_BroadbandModel</item>
+        <item>es-ES_BroadbandModel</item>
+        <item>fr-FR_BroadbandModel</item>
+        <item>ja-JP_BroadbandModel</item>
+        <item>ko-KR_BroadbandModel</item>
+        <item>pt-BR_BroadbandModel</item>
+        <item>zh-CN_BroadbandModel</item>
+    </array>
+
+    <array name="soruce_ibm_array">
+        <item>ar</item>
+        <item>en</item>
+        <item>en</item>
+        <item>es</item>
+        <item>fr</item>
+        <item>ja</item>
+        <item>ko</item>
+        <item>pt</item>
+        <item>zh</item>
+    </array>
+
+    <array name="voice_array">
+        <item>Birgit-German</item>
+        <item>Dieter-German</item>
+        <item>Allison-English</item>
+        <item>Lisa-English</item>
+        <item>Michael-English</item>
+        <item>Enrique-Spain</item>
+        <item>Laura-Spain</item>
+        <item>Sofia-Spanish</item>
+        <item>Renee-French</item>
+        <item>Kate-UK</item>
+        <item>Francesca-Italian</item>
+        <item>Emi-Japan</item>
+        <item>Sofia-Spanish(LA)</item>
+        <item>Isabela-Spanish(LA)</item>
+    </array>
+
+    <array name="language_array">
+        <item>Afrikaans</item>
+        <item>Arabic</item>
+        <item>Azerbaijani</item>
+        <item>Bashkir</item>
+        <item>Belarusian</item>
+        <item>Bulgarian</item>
+        <item>Bengali</item>
+        <item>Bosnian</item>
+        <item>Czech</item>
+        <item>Chuvash</item>
+        <item>Danish</item>
+        <item>German</item>
+        <item>Greek</item>
+        <item>English</item>
+        <item>Esperanto</item>
+        <item>Spanish</item>
+        <item>Estonian</item>
+        <item>Basque</item>
+        <item>Persian</item>
+        <item>Finnish</item>
+        <item>French</item>
+        <item>Gujarati</item>
+        <item>Hebrew</item>
+        <item>Hindi</item>
+        <item>Haitian</item>
+        <item>Hungarian</item>
+        <item>Armenian</item>
+        <item>Indonesian</item>
+        <item>Icelandic</item>
+        <item>Italian</item>
+        <item>Japanese</item>
+        <item>Georgian</item>
+        <item>Kazakh</item>
+        <item>Central Khmer</item>
+        <item>Korean</item>
+        <item>Kurdish</item>
+        <item>Kirghiz</item>
+        <item>Lithuanian</item>
+        <item>Latvian</item>
+        <item>Malayalam</item>
+        <item>Mongolian</item>
+        <item>Norwegian Bokmal</item>
+        <item>Dutch</item>
+        <item>Norwegian Nynorsk</item>
+        <item>Panjabi</item>
+        <item>Polish</item>
+        <item>Pushto</item>
+        <item>Portuguese</item>
+        <item>Romanian</item>
+        <item>Russian</item>
+        <item>Slovakian</item>
+        <item>Somali</item>
+        <item>Albanian</item>
+        <item>Swedish</item>
+        <item>Tamil</item>
+        <item>Telugu</item>
+        <item>Turkish</item>
+        <item>Ukrainian</item>
+        <item>Urdu</item>
+        <item>Vietnamese</item>
+        <item>Chinese</item>
+        <item>Traditional Chinese</item>
+    </array>
+
+    <array name="language_ibm_array">
+        <item>af</item>
+        <item>ar</item>
+        <item>az</item>
+        <item>ba</item>
+        <item>be</item>
+        <item>bg</item>
+        <item>bn</item>
+        <item>bs</item>
+        <item>cs</item>
+        <item>cv</item>
+        <item>da</item>
+        <item>de</item>
+        <item>el</item>
+        <item>en</item>
+        <item>eo</item>
+        <item>es</item>
+        <item>et</item>
+        <item>eu</item>
+        <item>fa</item>
+        <item>fi</item>
+        <item>fr</item>
+        <item>gu</item>
+        <item>he</item>
+        <item>hi</item>
+        <item>ht</item>
+        <item>hu</item>
+        <item>hy</item>
+        <item>id</item>
+        <item>is</item>
+        <item>it</item>
+        <item>ja</item>
+        <item>ka</item>
+        <item>kk</item>
+        <item>km</item>
+        <item>ko</item>
+        <item>ku</item>
+        <item>ky</item>
+        <item>lt</item>
+        <item>lv</item>
+        <item>ml</item>
+        <item>mn</item>
+        <item>nb</item>
+        <item>nl</item>
+        <item>nn</item>
+        <item>pa</item>
+        <item>pl</item>
+        <item>ps</item>
+        <item>pt</item>
+        <item>ro</item>
+        <item>ru</item>
+        <item>sk</item>
+        <item>so</item>
+        <item>sq</item>
+        <item>sv</item>
+        <item>ta</item>
+        <item>te</item>
+        <item>tr</item>
+        <item>uk</item>
+        <item>ur</item>
+        <item>vi</item>
+        <item>zh</item>
+        <item>zh-TW</item>
+    </array>
+
+
 </resources>
