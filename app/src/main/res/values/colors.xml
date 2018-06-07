@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#3F51B5</color>
-    <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorAccent">#FF4081</color>
+    <color name="colorPrimary">#009688</color>
+    <color name="colorPrimaryDark">#00675b</color>
+    <color name="colorAccent">#ededed</color>
     <color name="lightgray">#ededed</color>
     <color name="hello">#939393</color>
     <color name="white">#ffff</color>
     <color name="transparent">#00000000</color>
-    <color name="light_gray">#dddddd</color>
+    <color name="light_gray">#c7c2c2</color>
     <color name="cream">#fdf5c9</color>
     <color name="bg_bubble_self">#62caa6</color>
     <color name="bg_bubble_watbot">#ecf0f1</color>

@@ -1,6 +1,6 @@
 package nyc.c4q.translator.presenter;
 
-;
+
 import android.util.Log;
 
 import com.ibm.watson.developer_cloud.android.library.audio.MicrophoneInputStream;
@@ -22,7 +22,6 @@ import java.util.HashMap;
 import nyc.c4q.translator.contract.Contract;
 import nyc.c4q.translator.model.SystemTranslationModel;
 
-
 /**
  * Created by jervon.arnoldd on 6/2/18.
  */
@@ -34,6 +33,7 @@ public class Presenter implements Contract.Presenter {
     private SpeechToText speechToTextService;
     private SystemTranslationModel systemTran = SystemTranslationModel.getInstance();
 
+
     public Presenter(Contract.View viewImpl, TextToSpeech textToSpeechService,
                      LanguageTranslator languageTranslatorService, SpeechToText speechToTextService) {
         this.viewImpl = viewImpl;
@@ -43,7 +43,7 @@ public class Presenter implements Contract.Presenter {
     }
 
     private RecognizeOptions getRecognizeOptions() {
-        Log.e("Presenter",getBroadBand(systemTran.getSource()));
+        Log.e("Presenter", getBroadBand(systemTran.getSource()));
         return new RecognizeOptions.Builder()
                 .contentType(ContentType.OPUS.toString())
                 .model(getBroadBand(systemTran.getSource()))
@@ -66,22 +66,24 @@ public class Presenter implements Contract.Presenter {
         });
     }
 
-    public void translateString(String str) {
+    private void translateString(String str) {
         TranslateOptions translateOptions = new TranslateOptions.Builder()
                 .addText(str)
                 .source(systemTran.getSource())
                 .target(systemTran.getTarget())
                 .build();
+        Log.e("Source",systemTran.getSource());
+        Log.e("Target",systemTran.getTarget());
 
         languageTranslatorService.translate(translateOptions).enqueue(new ServiceCallback<TranslationResult>() {
             @Override
             public void onResponse(TranslationResult response) {
                 String tran = response.getTranslations().get(0).getTranslation();
-
-               if (systemTran.isGetVoice()) {
-                   getVoice(tran);
-               }
+                if (systemTran.isGetVoice()) {
+                    getVoice(tran);
+                }
                 Log.e("THis is a Tran", tran);
+                viewImpl.sendMessage(tran);
             }
 
             @Override
@@ -92,38 +94,39 @@ public class Presenter implements Contract.Presenter {
     }
 
     private void recordMessage(MicrophoneInputStream capture) {
-            final BaseRecognizeCallback callback = new BaseRecognizeCallback() {
-                @Override
-                public void onTranscription(SpeechResults speechResults) {
-                    if (speechResults.getResults() != null && !speechResults.getResults().isEmpty()) {
-                        String text = speechResults.getResults().get(0).getAlternatives().get(0).getTranscript();
-                        Log.e("Text", text);
-                        viewImpl.showText(text);
-                    }
+        final BaseRecognizeCallback callback = new BaseRecognizeCallback() {
+            @Override
+            public void onTranscription(SpeechResults speechResults) {
+                if (speechResults.getResults() != null && !speechResults.getResults().isEmpty()) {
+                    String text = speechResults.getResults().get(0).getAlternatives().get(0).getTranscript();
+                    Log.e("Text", text);
+                    viewImpl.showText(text);
                 }
-                @Override
-                public void onDisconnected() {
-                    Log.e("Disconnected","Disconnected");
-                }
-            };
-            new Thread(() -> {
-                try {
-                    speechToTextService.recognizeUsingWebSocket(capture, getRecognizeOptions(), callback);
-                } catch (Exception e) {
-                    Log.e("Exception", e.getMessage());
-                }
-            }).start();
-    }
+            }
 
+            @Override
+            public void onDisconnected() {
+               viewImpl.disconnected();
+                Log.e("Disconnected", "Nothing Left");
+            }
+        };
+       new Thread(() -> {
+            try {
+                speechToTextService.recognizeUsingWebSocket(capture, getRecognizeOptions(), callback);
+            } catch (Exception e) {
+                Log.e("Exception Thread", e.getMessage());
+            }
+        }).start();
+//        Log.e("Thread",tread.getState().toString());
+    }
 
     @Override
     public void start() {
-
     }
 
     @Override
     public void translate(String str) {
-          translateString(str);
+        translateString(str);
     }
 
     @Override
@@ -150,25 +153,17 @@ public class Presenter implements Contract.Presenter {
         return voiceHashMap.get(voiceChoice);
     }
 
-
-    private String getBroadBand(String source){
+    private String getBroadBand(String source) {
         HashMap<String, String> broadBandHashMap = new HashMap<>();
-        broadBandHashMap.put("ar","ar-AR_BroadbandModel");
-        broadBandHashMap.put("en","en-GB_BroadbandModel");
-        broadBandHashMap.put("en","en-US_BroadbandModel");
-        broadBandHashMap.put("es","es-ES_BroadbandModel");
-        broadBandHashMap.put("fr","fr-FR_BroadbandModel");
-        broadBandHashMap.put("ja","ja-JP_BroadbandModel");
-        broadBandHashMap.put("ko","ko-KR_BroadbandModel");
-        broadBandHashMap.put("pt","pt-BR_BroadbandModel");
-        broadBandHashMap.put("zh","zh-CN_BroadbandModel");
+        broadBandHashMap.put("ar", "ar-AR_BroadbandModel");
+        broadBandHashMap.put("en", "en-GB_BroadbandModel");
+        broadBandHashMap.put("en", "en-US_BroadbandModel");
+        broadBandHashMap.put("es", "es-ES_BroadbandModel");
+        broadBandHashMap.put("fr", "fr-FR_BroadbandModel");
+        broadBandHashMap.put("ja", "ja-JP_BroadbandModel");
+        broadBandHashMap.put("ko", "ko-KR_BroadbandModel");
+        broadBandHashMap.put("pt", "pt-BR_BroadbandModel");
+        broadBandHashMap.put("zh", "zh-CN_BroadbandModel");
         return broadBandHashMap.get(source);
     }
-
-
-
-
-
-
-
 }

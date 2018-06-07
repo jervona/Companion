@@ -4,14 +4,17 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="nyc.c4q.translator.MainActivity"
-    android:background="@color/light_gray">
+    android:background="@color/white"
+    tools:context="nyc.c4q.translator.MainActivity">
 
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
-        android:layout_height="250dp"
+        android:layout_height="200dp"
+        android:layout_marginEnd="15dp"
+        android:layout_marginStart="15dp"
+        android:layout_marginTop="18dp"
         android:orientation="vertical"
         app:layoutManager="android.support.v7.widget.LinearLayoutManager"
         app:layout_constraintEnd_toEndOf="parent"
@@ -19,102 +22,204 @@
         app:layout_constraintTop_toTopOf="parent"
         app:stackFromEnd="true" />
 
-    <View
+
+    <android.support.v7.widget.CardView
+        android:id="@+id/pay"
         android:layout_width="match_parent"
-        android:layout_height="4dp"
-        app:layout_constraintBottom_toTopOf="@+id/text"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        android:background="@color/cream"
-        app:layout_constraintTop_toBottomOf="@+id/recyclerView" />
-
-    <EditText
-        android:id="@+id/text"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="176dp"
-        android:layout_marginTop="8dp"
-        android:hint="Type to Translate"
-        android:inputType="text"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/recyclerView"
-        app:layout_constraintVertical_bias="0.032" />
-
-    <Spinner
-        android:id="@+id/voice_spinner"
-        android:layout_width="159dp"
-        android:layout_height="30dp"
-        android:entries="@array/voice_array"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/text" />
-
-    <Spinner
-        android:id="@+id/target"
-        android:layout_width="150dp"
-        android:layout_height="30dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="20dp"
-        android:entries="@array/soruce_language_array"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/voice_spinner" />
-
-    <Spinner
-        android:id="@+id/source"
-        android:layout_width="150dp"
-        android:layout_height="30dp"
-        android:layout_marginTop="8dp"
-        android:entries="@array/soruce_language_array"
-        app:layout_constraintBottom_toBottomOf="@+id/target"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/target"
-        app:layout_constraintVertical_bias="1.0" />
-
-
-    <ImageButton
-        android:id="@+id/mic"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
+        android:layout_marginEnd="15dp"
+        android:layout_marginStart="15dp"
+        android:layout_marginTop="5dp"
+        android:background="@color/light_gray"
+        android:clickable="true"
+        android:focusable="true"
+
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/recyclerView"
+        app:layout_constraintVertical_bias="0.015">
+
+        <android.support.constraint.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <EditText
+                android:id="@+id/text"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:background="@color/transparent"
+                android:ems="10"
+                android:gravity="top|start"
+                android:hint="Write here to Convert text"
+                android:lines="5"
+                android:textColor="#000000"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <View
+                android:id="@+id/view"
+                android:layout_width="match_parent"
+                android:layout_height="5dp"
+                android:background="@color/lightgray"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/text" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/view">
+
+                <Spinner
+                    android:id="@+id/source"
+                    android:layout_width="150dp"
+                    android:layout_height="45dp"
+                    android:entries="@array/soruce_language_array" />
+
+                <ImageButton
+                    android:id="@+id/swap"
+                    android:layout_width="50dp"
+                    android:layout_height="38dp"
+                    android:layout_marginEnd="9dp"
+                    android:layout_marginStart="9dp"
+                    android:background="@color/transparent"
+                    android:src="@drawable/ic_swap_horiz_black_24dp" />
+
+                <Spinner
+                    android:id="@+id/target"
+                    android:layout_width="150dp"
+                    android:layout_height="45dp"
+                    android:entries="@array/soruce_language_array" />
+
+            </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/translatedMessage"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:background="@color/transparent"
+                android:src="@drawable/ic_send_black_24dp"
+                app:layout_constraintBottom_toBottomOf="@id/text"
+                app:layout_constraintRight_toRightOf="@id/text"
+                app:layout_constraintTop_toTopOf="@id/text"
+                app:layout_constraintVertical_bias="1.0"
+                tools:layout_editor_absoluteX="514dp" />
+
+        </android.support.constraint.ConstraintLayout>
+    </android.support.v7.widget.CardView>
+
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/mic"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_marginBottom="32dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:hapticFeedbackEnabled="true"
         android:soundEffectsEnabled="true"
-        android:src="@drawable/ic_mic_black_24dp"
+        android:src="@drawable/ic_primary_user_black_24dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/second_speaker_button"
-        app:layout_constraintHorizontal_bias="0.135"
+        app:layout_constraintHorizontal_bias="0.152"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/source"
-        app:layout_constraintVertical_bias="0.843" />
+        app:layout_constraintTop_toBottomOf="@+id/voice_spinner"
+        app:layout_constraintVertical_bias="0.56" />
 
 
-    <ImageButton
+    <!--app:srcCompat="@android:drawable/ic_btn_speak_now"/>-->
+
+    <android.support.design.widget.FloatingActionButton
         android:id="@+id/second_speaker_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:hapticFeedbackEnabled="true"
-        android:soundEffectsEnabled="true"
-        android:src="@drawable/ic_mic_black_24dp"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
         android:layout_marginBottom="8dp"
         android:layout_marginEnd="36dp"
+        android:hapticFeedbackEnabled="true"
+        android:soundEffectsEnabled="true"
+        android:src="@drawable/ic_secondary_user_black_24dp"
         app:layout_constraintBottom_toBottomOf="@+id/mic"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/mic"
         app:layout_constraintVertical_bias="0.0" />
 
 
+    <Spinner
+        android:id="@+id/voice_spinner"
+        android:layout_width="160dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:entries="@array/voice_array"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.501"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/pay"
+        tools:layout_editor_absoluteY="416 dp" />
 
+    <com.skyfishjy.library.RippleBackground
+        android:id="@+id/ripple_background"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_bias="0.501"
+        app:layout_constraintLeft_toLeftOf="@id/voice_spinner"
+        app:layout_constraintRight_toRightOf="@id/voice_spinner"
+        app:layout_constraintTop_toBottomOf="@id/voice_spinner"
+        app:layout_constraintVertical_bias="0.072"
+        app:rb_color="#00675b"
+        app:rb_duration="2000"
+        app:rb_radius="90dp"
+        app:rb_rippleAmount="8"
+        app:rb_scale="6">
+
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="@string/listening"
+                android:textAlignment="center"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+
+        <ImageButton
+            android:id="@+id/back"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@color/transparent"
+            android:src="@drawable/ic_arrow_back_black_24dp" />
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/centerImage"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:src="@drawable/ic_mic_black_24dp" />
+
+    </com.skyfishjy.library.RippleBackground>
 
 
 </android.support.constraint.ConstraintLayout>

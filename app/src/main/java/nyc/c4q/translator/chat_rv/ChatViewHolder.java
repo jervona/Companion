@@ -13,8 +13,10 @@ import nyc.c4q.translator.R;
 class ChatViewHolder extends RecyclerView.ViewHolder {
 
     TextView message;
-    public ChatViewHolder(View itemView) {
+    TextView translatedMessage;
+    ChatViewHolder(View itemView) {
         super(itemView);
         message =  itemView.findViewById(R.id.message);
+        translatedMessage =  itemView.findViewById(R.id.translatedMessage);
     }
 }

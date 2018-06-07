@@ -10,7 +10,7 @@
 
     <string name="speech_to_text_username">af1c2eab-667f-4416-a669-efef5982923d</string>
     <string name="speech_to_text_password">YNkORoEo8KwS</string>
-
+    <string name="listening">Listening</string>
 
 
     <array name="soruce_language_array">

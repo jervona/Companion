@@ -6,6 +6,8 @@ import com.ibm.watson.developer_cloud.android.library.audio.StreamPlayer;
 import java.io.InputStream;
 import java.util.List;
 
+import nyc.c4q.translator.model.Message;
+
 /**
  * Created by jervon.arnoldd on 6/1/18.
  */
@@ -15,6 +17,8 @@ public interface Contract {
         void playStream(InputStream streamPlayer);
         void showErrorMessage();
         void showText(String text);
+        void sendMessage(String message);
+        void disconnected();
     }
 
     interface Presenter {
