@@ -1,4 +1,4 @@
-package nyc.c4q.translator.model;
+package nyc.c4q.translator.singleton;
 
 /**
  * Created by jervon.arnoldd on 6/2/18.

@@ -18,16 +18,11 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
-import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-import com.eyalbira.loadingdots.LoadingDots;
 import com.ibm.watson.developer_cloud.android.library.audio.MicrophoneHelper;
 import com.ibm.watson.developer_cloud.android.library.audio.MicrophoneInputStream;
 import com.ibm.watson.developer_cloud.android.library.audio.StreamPlayer;
@@ -46,7 +41,7 @@ import butterknife.OnClick;
 import nyc.c4q.translator.chat_rv.ChatAdapter;
 import nyc.c4q.translator.contract.Contract;
 import nyc.c4q.translator.model.Message;
-import nyc.c4q.translator.model.SystemTranslationModel;
+import nyc.c4q.translator.singleton.SystemTranslationModel;
 import nyc.c4q.translator.presenter.Presenter;
 
 public class MainActivity extends AppCompatActivity implements Contract.View {
@@ -128,14 +123,14 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
     public void primary() {
        toggleVisibility();
         delegateUser = "1";
-        idk();
+        recordToggle();
     }
 
     @OnClick(R.id.second_speaker_button)
     public void secondary() {
         toggleVisibility();
         delegateUser = "0";
-        idk();
+        recordToggle();
     }
 
     @OnClick(R.id.back)
@@ -152,7 +147,7 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    public void idk(){
+    public void recordToggle(){
         imageView.setOnTouchListener((v, event) -> {
             if(event.getAction() == MotionEvent.ACTION_DOWN) {
                 rippleBackground.startRippleAnimation();
@@ -162,7 +157,6 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
                 rippleBackground.stopRippleAnimation();
                 stopRecording();
             }
-
             return true;
         });
     }

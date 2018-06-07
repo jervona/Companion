@@ -26,8 +26,4 @@ public interface Contract {
         void translate(String str);
         void recordAudio(MicrophoneInputStream capture);
     }
-
-
-
-
 }
