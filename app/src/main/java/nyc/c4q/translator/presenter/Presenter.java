@@ -20,7 +20,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 
 import nyc.c4q.translator.contract.Contract;
-import nyc.c4q.translator.model.SystemTranslationModel;
+import nyc.c4q.translator.singleton.SystemTranslationModel;
 
 /**
  * Created by jervon.arnoldd on 6/2/18.
