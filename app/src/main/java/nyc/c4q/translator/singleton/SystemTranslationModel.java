@@ -13,9 +13,7 @@ public class SystemTranslationModel {
     private  boolean getVoice;
 
 
-    private SystemTranslationModel() {}
-
-    public static SystemTranslationModel getInstance() {
+    public static synchronized SystemTranslationModel getInstance() {
         if (single_instance == null)
             single_instance = new SystemTranslationModel();
         return single_instance;

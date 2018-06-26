@@ -19,6 +19,8 @@ import com.ibm.watson.developer_cloud.text_to_speech.v1.model.Voice;
 import java.io.InputStream;
 import java.util.HashMap;
 
+import javax.inject.Inject;
+
 import nyc.c4q.translator.contract.Contract;
 import nyc.c4q.translator.singleton.SystemTranslationModel;
 
@@ -33,17 +35,14 @@ public class Presenter implements Contract.Presenter {
     private SpeechToText speechToTextService;
     private SystemTranslationModel systemTran = SystemTranslationModel.getInstance();
 
-
-    public Presenter(Contract.View viewImpl, TextToSpeech textToSpeechService,
-                     LanguageTranslator languageTranslatorService, SpeechToText speechToTextService) {
-        this.viewImpl = viewImpl;
+    @Inject
+    Presenter(TextToSpeech textToSpeechService, LanguageTranslator languageTranslatorService, SpeechToText speechToTextService) {
         this.textToSpeechService = textToSpeechService;
         this.languageTranslatorService = languageTranslatorService;
         this.speechToTextService = speechToTextService;
     }
 
     private RecognizeOptions getRecognizeOptions() {
-        Log.e("Presenter", getBroadBand(systemTran.getSource()));
         return new RecognizeOptions.Builder()
                 .contentType(ContentType.OPUS.toString())
                 .model(getBroadBand(systemTran.getSource()))
@@ -72,8 +71,6 @@ public class Presenter implements Contract.Presenter {
                 .source(systemTran.getSource())
                 .target(systemTran.getTarget())
                 .build();
-        Log.e("Source",systemTran.getSource());
-        Log.e("Target",systemTran.getTarget());
 
         languageTranslatorService.translate(translateOptions).enqueue(new ServiceCallback<TranslationResult>() {
             @Override
@@ -82,7 +79,6 @@ public class Presenter implements Contract.Presenter {
                 if (systemTran.isGetVoice()) {
                     getVoice(tran);
                 }
-                Log.e("THis is a Tran", tran);
                 viewImpl.sendMessage(tran);
             }
 
@@ -99,7 +95,6 @@ public class Presenter implements Contract.Presenter {
             public void onTranscription(SpeechResults speechResults) {
                 if (speechResults.getResults() != null && !speechResults.getResults().isEmpty()) {
                     String text = speechResults.getResults().get(0).getAlternatives().get(0).getTranscript();
-                    Log.e("Text", text);
                     viewImpl.showText(text);
                 }
             }
@@ -117,7 +112,11 @@ public class Presenter implements Contract.Presenter {
                 Log.e("Exception Thread", e.getMessage());
             }
         }).start();
-//        Log.e("Thread",tread.getState().toString());
+    }
+
+    @Override
+    public void setView(Contract.View v) {
+        this.viewImpl = v;
     }
 
     @Override

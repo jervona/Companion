@@ -1,12 +1,8 @@
 package nyc.c4q.translator.contract;
 
 import com.ibm.watson.developer_cloud.android.library.audio.MicrophoneInputStream;
-import com.ibm.watson.developer_cloud.android.library.audio.StreamPlayer;
 
 import java.io.InputStream;
-import java.util.List;
-
-import nyc.c4q.translator.model.Message;
 
 /**
  * Created by jervon.arnoldd on 6/1/18.
@@ -22,6 +18,7 @@ public interface Contract {
     }
 
     interface Presenter {
+        void setView(Contract.View v);
         void start();
         void translate(String str);
         void recordAudio(MicrophoneInputStream capture);

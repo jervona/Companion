@@ -1,4 +1,4 @@
-package nyc.c4q.translator.model;
+package nyc.c4q.translator.Pojo;
 
 /**
  * Created by jervon.arnoldd on 5/16/18.

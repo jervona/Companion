@@ -26,23 +26,23 @@ import android.widget.Toast;
 import com.ibm.watson.developer_cloud.android.library.audio.MicrophoneHelper;
 import com.ibm.watson.developer_cloud.android.library.audio.MicrophoneInputStream;
 import com.ibm.watson.developer_cloud.android.library.audio.StreamPlayer;
-import com.ibm.watson.developer_cloud.language_translator.v2.LanguageTranslator;
-import com.ibm.watson.developer_cloud.speech_to_text.v1.SpeechToText;
-import com.ibm.watson.developer_cloud.text_to_speech.v1.TextToSpeech;
 import com.skyfishjy.library.RippleBackground;
 
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import nyc.c4q.translator.chat_rv.ChatAdapter;
 import nyc.c4q.translator.contract.Contract;
-import nyc.c4q.translator.model.Message;
-import nyc.c4q.translator.singleton.SystemTranslationModel;
+import nyc.c4q.translator.Pojo.Message;
+import nyc.c4q.translator.dependancies.BaseApp;
 import nyc.c4q.translator.presenter.Presenter;
+import nyc.c4q.translator.singleton.SystemTranslationModel;
 
 public class MainActivity extends AppCompatActivity implements Contract.View {
 
@@ -65,18 +65,16 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
     @BindView(R.id.centerImage)
     FloatingActionButton imageView;
 
+    @Inject
+    Presenter presenter;
 
-    private boolean permissionToRecordAccepted = false;
+
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
     private static String TAG = "MainActivity";
     private static final int RECORD_REQUEST_CODE = 101;
-    private boolean listening = false;
     private MicrophoneHelper microphoneHelper;
 
     StreamPlayer streamPlayer;
-    TextToSpeech textToSpeechService;
-    LanguageTranslator languageTranslatorService;
-    SpeechToText speechToTextService;
     ChatAdapter chatAdapter;
 
     private List<Message> chatList;
@@ -88,7 +86,6 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
     String targetHolder;
 
     SystemTranslationModel systemTran;
-    Contract.Presenter presenter;
     String delegateUser;
 
 
@@ -97,20 +94,21 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
-        setupServiceCredentials();
+        BaseApp application = (BaseApp) getApplicationContext();
+        application.getMyComponent().inject(this);
         setupDataStructions();
         setupRecyclerView();
-
         systemTran = SystemTranslationModel.getInstance();
+        setSpinners();
         microphoneHelper = new MicrophoneHelper(this);
+        presenter.setView(this);
 
         int permission = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO);
         if (permission != PackageManager.PERMISSION_GRANTED) {
             Log.i(TAG, "Permission to record denied");
             makeRequest();
         }
-        presenter = new Presenter(this, textToSpeechService, languageTranslatorService, speechToTextService);
-        setSpinners();
+
     }
 
     @OnClick(R.id.translatedMessage)
@@ -171,14 +169,10 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
         }
         MicrophoneInputStream capture = microphoneHelper.getInputStream(true);
         presenter.recordAudio(capture);
-        Toast.makeText(MainActivity.this, "Listening....Click to Stop", Toast.LENGTH_SHORT).show();
     }
 
     public void stopRecording(){
         microphoneHelper.closeInputStream();
-        Log.e("Source after", systemTran.getSource());
-        Log.e("targst after", systemTran.getTarget());
-        Toast.makeText(MainActivity.this, "Stopped Listening....Click to Start", Toast.LENGTH_SHORT).show();
     }
 
     private void setupRecyclerView() {
@@ -234,23 +228,6 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
         });
     }
 
-    private void setupServiceCredentials() {
-        textToSpeechService = new TextToSpeech();
-        String user = getResources().getString(R.string.text_to_speech_username);
-        String password = getResources().getString(R.string.text_to_speech_password);
-        textToSpeechService.setUsernameAndPassword(user, password);
-
-        languageTranslatorService = new LanguageTranslator();
-        String transUser = getResources().getString(R.string.language_translator_username);
-        String transPassword = getResources().getString(R.string.language_translator_password);
-        languageTranslatorService.setUsernameAndPassword(transUser, transPassword);
-
-        speechToTextService = new SpeechToText();
-        String speechToTextUser = getResources().getString(R.string.speech_to_text_username);
-        String speechToTextPassword = getResources().getString(R.string.speech_to_text_password);
-        speechToTextService.setUsernameAndPassword(speechToTextUser, speechToTextPassword);
-    }
-
     private void setupDataStructions() {
         lan = getResources().getStringArray(R.array.language_ibm_array);
         sourceIDMArray = getResources().getStringArray(R.array.soruce_ibm_array);
@@ -289,7 +266,6 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
 
     @Override
     public void playStream(InputStream stream) {
-        InputStream tenp = stream;
         streamPlayer = new StreamPlayer();
         streamPlayer.playStream(stream);
     }
@@ -323,7 +299,7 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode) {
             case REQUEST_RECORD_AUDIO_PERMISSION:
-                permissionToRecordAccepted = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+                boolean permissionToRecordAccepted = grantResults[0] == PackageManager.PERMISSION_GRANTED;
                 break;
             case RECORD_REQUEST_CODE: {
                 if (grantResults.length == 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {

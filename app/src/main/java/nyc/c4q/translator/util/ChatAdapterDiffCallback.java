@@ -5,7 +5,7 @@ import android.support.v7.util.DiffUtil;
 
 import java.util.List;
 
-import nyc.c4q.translator.model.Message;
+import nyc.c4q.translator.Pojo.Message;
 
 /**
  * Created by jervon.arnoldd on 4/1/18.

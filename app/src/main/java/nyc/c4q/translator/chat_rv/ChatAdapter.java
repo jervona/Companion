@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import nyc.c4q.translator.R;
-import nyc.c4q.translator.model.Message;
+import nyc.c4q.translator.Pojo.Message;
 import nyc.c4q.translator.util.ChatAdapterDiffCallback;
 
 /**
@@ -37,10 +37,8 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatViewHolder> {
         View itemView;
 
         if (viewType == PRIMARY_USER) {
-            // self message
             itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.chat_item_self, parent, false);
         } else {
-            // WatBot message
             itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.chat_item_watson, parent, false);
         }
         return new ChatViewHolder(itemView);
