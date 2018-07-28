@@ -2,7 +2,6 @@ package nyc.c4q.translator.dependancies;
 
 import android.app.Application;
 
-import nyc.c4q.translator.DaggerMyComponent;
 
 /**
  * Created by jervon.arnoldd on 6/24/18.

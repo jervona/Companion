@@ -1,23 +1,20 @@
 package nyc.c4q.translator.singleton;
 
+import javax.inject.Singleton;
+
+import dagger.Module;
+
 /**
  * Created by jervon.arnoldd on 6/2/18.
  */
 
 public class SystemTranslationModel {
 
-    private static SystemTranslationModel single_instance = null;
     private String target;
     private String source;
     private String chosenVoice;
     private  boolean getVoice;
 
-
-    public static synchronized SystemTranslationModel getInstance() {
-        if (single_instance == null)
-            single_instance = new SystemTranslationModel();
-        return single_instance;
-    }
 
     public String getTarget() {
         return target;

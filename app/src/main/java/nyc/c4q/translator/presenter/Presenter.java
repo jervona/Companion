@@ -1,7 +1,13 @@
 package nyc.c4q.translator.presenter;
 
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.Uri;
+import android.support.annotation.NonNull;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.ibm.watson.developer_cloud.android.library.audio.MicrophoneInputStream;
 import com.ibm.watson.developer_cloud.android.library.audio.utils.ContentType;
@@ -21,6 +27,9 @@ import java.util.HashMap;
 
 import javax.inject.Inject;
 
+
+import io.reactivex.Observable;
+import io.reactivex.Single;
 import nyc.c4q.translator.contract.Contract;
 import nyc.c4q.translator.singleton.SystemTranslationModel;
 
@@ -28,18 +37,27 @@ import nyc.c4q.translator.singleton.SystemTranslationModel;
  * Created by jervon.arnoldd on 6/2/18.
  */
 
-public class Presenter implements Contract.Presenter {
-    private Contract.View viewImpl;
+public class Presenter {
     private TextToSpeech textToSpeechService;
     private LanguageTranslator languageTranslatorService;
     private SpeechToText speechToTextService;
-    private SystemTranslationModel systemTran = SystemTranslationModel.getInstance();
+    private SystemTranslationModel systemTran;
+    private RecognizeOptions recognizeOptions;
+    private Context context;
 
     @Inject
-    Presenter(TextToSpeech textToSpeechService, LanguageTranslator languageTranslatorService, SpeechToText speechToTextService) {
+    Presenter(TextToSpeech textToSpeechService, LanguageTranslator languageTranslatorService, SpeechToText speechToTextService,SystemTranslationModel systemTran,Context context) {
         this.textToSpeechService = textToSpeechService;
         this.languageTranslatorService = languageTranslatorService;
         this.speechToTextService = speechToTextService;
+        this.systemTran=systemTran;
+        this.context=context;
+    }
+
+    public boolean checkInternetConnection() {
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
     }
 
     private RecognizeOptions getRecognizeOptions() {
@@ -51,86 +69,67 @@ public class Presenter implements Contract.Presenter {
                 .build();
     }
 
-    private void getVoice(String str) {
-        textToSpeechService.synthesize(str, voices(systemTran.getChosenVoice())).enqueue(new ServiceCallback<InputStream>() {
-            @Override
-            public void onResponse(InputStream response) {
-                viewImpl.playStream(response);
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                Log.e("Error TTS", e.getMessage());
-            }
+    public Single<InputStream> voiceSingle(String str) {
+        return Single.create(emitter -> {
+            textToSpeechService.synthesize(str, voices(systemTran.getChosenVoice())).enqueue(new ServiceCallback<InputStream>() {
+                @Override
+                public void onResponse(InputStream response) {
+                    emitter.onSuccess(response);
+                }
+                @Override
+                public void onFailure(Exception e) {
+                   emitter.onError(e);
+                }
+            });
         });
+
     }
 
-    private void translateString(String str) {
+    public Single<String> textTranslationSingle(String str) {
         TranslateOptions translateOptions = new TranslateOptions.Builder()
                 .addText(str)
                 .source(systemTran.getSource())
                 .target(systemTran.getTarget())
                 .build();
 
-        languageTranslatorService.translate(translateOptions).enqueue(new ServiceCallback<TranslationResult>() {
-            @Override
-            public void onResponse(TranslationResult response) {
-                String tran = response.getTranslations().get(0).getTranslation();
-                if (systemTran.isGetVoice()) {
-                    getVoice(tran);
+        return Single.create(emitter -> {
+            languageTranslatorService.translate(translateOptions).enqueue(new ServiceCallback<TranslationResult>() {
+                @Override
+                public void onResponse(TranslationResult response) {
+                    emitter.onSuccess(response.getTranslations().get(0).getTranslation());
                 }
-                viewImpl.sendMessage(tran);
-            }
 
-            @Override
-            public void onFailure(Exception e) {
-                Log.e("Error Translate", e.getMessage());
-            }
+                @Override
+                public void onFailure(Exception e) {
+                    emitter.onError(e);
+                }
+            });
         });
     }
 
-    private void recordMessage(MicrophoneInputStream capture) {
-        final BaseRecognizeCallback callback = new BaseRecognizeCallback() {
-            @Override
-            public void onTranscription(SpeechResults speechResults) {
-                if (speechResults.getResults() != null && !speechResults.getResults().isEmpty()) {
-                    String text = speechResults.getResults().get(0).getAlternatives().get(0).getTranscript();
-                    viewImpl.showText(text);
+    @NonNull
+    public Observable<SpeechResults> speechToVoiceObservable(MicrophoneInputStream capture) {
+        recognizeOptions = getRecognizeOptions();
+        return Observable.create(emitter -> {
+            BaseRecognizeCallback callback = new BaseRecognizeCallback() {
+                @Override
+                public void onTranscription(SpeechResults speechResults) {
+                    emitter.onNext(speechResults);
                 }
-            }
 
-            @Override
-            public void onDisconnected() {
-               viewImpl.disconnected();
-                Log.e("Disconnected", "Nothing Left");
-            }
-        };
-       new Thread(() -> {
-            try {
-                speechToTextService.recognizeUsingWebSocket(capture, getRecognizeOptions(), callback);
-            } catch (Exception e) {
-                Log.e("Exception Thread", e.getMessage());
-            }
-        }).start();
-    }
+                @Override
+                public void onDisconnected() {
+                    Log.e("onDisconnected", "Disconnected");
+                    emitter.onComplete();
+                }
 
-    @Override
-    public void setView(Contract.View v) {
-        this.viewImpl = v;
-    }
-
-    @Override
-    public void start() {
-    }
-
-    @Override
-    public void translate(String str) {
-        translateString(str);
-    }
-
-    @Override
-    public void recordAudio(MicrophoneInputStream capture) {
-        recordMessage(capture);
+                @Override
+                public void onError(Exception e) {
+                    emitter.onError(e);
+                }
+            };
+            speechToTextService.recognizeUsingWebSocket(capture, getRecognizeOptions(), callback);
+        });
     }
 
     private Voice voices(String voiceChoice) {

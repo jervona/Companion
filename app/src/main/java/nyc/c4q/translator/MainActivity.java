@@ -2,15 +2,11 @@ package nyc.c4q.translator;
 
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.support.annotation.NonNull;
+import android.support.constraint.Group;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
@@ -18,7 +14,6 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
@@ -26,7 +21,10 @@ import android.widget.Toast;
 import com.ibm.watson.developer_cloud.android.library.audio.MicrophoneHelper;
 import com.ibm.watson.developer_cloud.android.library.audio.MicrophoneInputStream;
 import com.ibm.watson.developer_cloud.android.library.audio.StreamPlayer;
+import com.jakewharton.rxbinding2.view.RxView;
+import com.jakewharton.rxbinding2.widget.RxAdapterView;
 import com.skyfishjy.library.RippleBackground;
+import com.tbruyelle.rxpermissions2.RxPermissions;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -37,6 +35,9 @@ import javax.inject.Inject;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import io.reactivex.Single;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.schedulers.Schedulers;
 import nyc.c4q.translator.chat_rv.ChatAdapter;
 import nyc.c4q.translator.contract.Contract;
 import nyc.c4q.translator.Pojo.Message;
@@ -64,9 +65,15 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
     RippleBackground rippleBackground;
     @BindView(R.id.centerImage)
     FloatingActionButton imageView;
+    @BindView(R.id.group)
+    Group group1;
+    @BindView(R.id.group2)
+    Group group2;
 
     @Inject
     Presenter presenter;
+    @Inject
+    SystemTranslationModel systemTran;
 
 
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
@@ -85,8 +92,9 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
     String sourceHolder;
     String targetHolder;
 
-    SystemTranslationModel systemTran;
     String delegateUser;
+
+    RxPermissions rxPermissions;
 
 
     @Override
@@ -98,80 +106,106 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
         application.getMyComponent().inject(this);
         setupDataStructions();
         setupRecyclerView();
-        systemTran = SystemTranslationModel.getInstance();
         setSpinners();
         microphoneHelper = new MicrophoneHelper(this);
-        presenter.setView(this);
+        rxPermissions = new RxPermissions(this);
 
-        int permission = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO);
-        if (permission != PackageManager.PERMISSION_GRANTED) {
-            Log.i(TAG, "Permission to record denied");
-            makeRequest();
+        if (presenter.checkInternetConnection()){
+            group1.setClickable(true);
+        } else{
+            group1.setClickable(false);
         }
+
+
+        rxPermissions.request(Manifest.permission.RECORD_AUDIO)
+                .subscribe(granted -> {
+                    if (granted) {
+                        recordToggle();
+                    } else {
+                        Toast.makeText(application, "Need Permissions to Record", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
 
     }
 
     @OnClick(R.id.translatedMessage)
-    public void translatedMessage(){
-        presenter.translate(editText.getText().toString());
+    public void translatedMessage() {
+        presenter.textTranslationSingle(editText.getText().toString())
+                .flatMap(s -> presenter.voiceSingle(s))
+                .subscribe(
+                        inputStream -> streamPlayer.playStream(inputStream),
+                        throwable -> Log.e("Error", throwable.getMessage()));
         systemTran.setGetVoice(true);
     }
 
     @OnClick(R.id.mic)
     public void primary() {
-       toggleVisibility();
+        toggleVisibility();
         delegateUser = "1";
-        recordToggle();
+        systemTran.setTarget(targetHolder);
+        systemTran.setSource(sourceHolder);
     }
 
     @OnClick(R.id.second_speaker_button)
     public void secondary() {
         toggleVisibility();
         delegateUser = "0";
-        recordToggle();
+        systemTran.setTarget(sourceHolder);
+        systemTran.setSource(targetHolder);
     }
 
     @OnClick(R.id.back)
-    public void toggleVisibility(){
-        if (primaryButton.getVisibility()==View.GONE){
-            primaryButton.setVisibility(View.VISIBLE);
-            secondaryUser.setVisibility(View.VISIBLE);
-            rippleBackground.setVisibility(View.GONE);
-        }else{
-            primaryButton.setVisibility(View.GONE);
-            secondaryUser.setVisibility(View.GONE);
-            rippleBackground.setVisibility(View.VISIBLE);
-        }
-    }
-
-    @SuppressLint("ClickableViewAccessibility")
-    public void recordToggle(){
-        imageView.setOnTouchListener((v, event) -> {
-            if(event.getAction() == MotionEvent.ACTION_DOWN) {
-                rippleBackground.startRippleAnimation();
-                startRecording();
-
-            } else if (event.getAction() == MotionEvent.ACTION_UP) {
-                rippleBackground.stopRippleAnimation();
-                stopRecording();
-            }
-            return true;
-        });
-    }
-
-    public void startRecording(){
-        if (delegateUser.equals("0")) {
-            systemTran.setTarget(sourceHolder);
-            systemTran.setSource(targetHolder);
-            systemTran.setGetVoice(false);
+    public void toggleVisibility() {
+        if (group2.getVisibility() == View.GONE) {
+            group2.setVisibility(View.VISIBLE);
+            group1.setVisibility(View.GONE);
         } else {
-            systemTran.setGetVoice(true);
+            group1.setVisibility(View.VISIBLE);
+            group2.setVisibility(View.GONE);
         }
-        MicrophoneInputStream capture = microphoneHelper.getInputStream(true);
-        presenter.recordAudio(capture);
     }
 
-    public void stopRecording(){
+    public void recordToggle() {
+        RxView.touches(imageView)
+                .subscribe(motionEvent -> {
+                    switch (motionEvent.getAction()) {
+                        case MotionEvent.ACTION_DOWN:
+                            rippleBackground.startRippleAnimation();
+                            startRecording();
+                            break;
+                        case MotionEvent.ACTION_UP:
+                            rippleBackground.stopRippleAnimation();
+                            stopRecording();
+                            break;
+                    }
+                });
+    }
+
+    public void startRecording() {
+
+        streamPlayer = new StreamPlayer();
+
+        MicrophoneInputStream capture = microphoneHelper.getInputStream(true);
+        presenter.speechToVoiceObservable(capture)
+                .subscribeOn(Schedulers.io())
+                .map(speechResults -> speechResults.getResults().get(0).getAlternatives().get(0).getTranscript())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext(string -> editText.setText(string))
+                .doOnError(throwable -> Log.e("Speech 2 txt Error", throwable.getMessage()))
+                .takeLast(1)
+                .map(string -> presenter.textTranslationSingle(string))
+                .doOnNext(stringSingle -> Log.e("Translation :", stringSingle.toString()))
+                .doOnError(throwable -> Log.e("Translation Error", throwable.getMessage()))
+                .flatMap(Single::toObservable)
+                .map(stringSingle -> presenter.voiceSingle(stringSingle))
+                .flatMap(Single::toObservable)
+                .subscribe(
+                        inputStream -> streamPlayer.playStream(inputStream),
+                        throwable -> Log.e("Error", throwable.getMessage()));
+    }
+
+    public void stopRecording() {
         microphoneHelper.closeInputStream();
     }
 
@@ -182,50 +216,20 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
     }
 
     private void setSpinners() {
-        systemTran.getSource();
-        targetHolder = systemTran.getTarget();
+        RxAdapterView.itemSelections(voice_spinner)
+                .subscribe(integer -> systemTran.setChosenVoice(voice_spinner.getItemAtPosition(integer).toString()));
 
-        voice_spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                String item = parent.getItemAtPosition(position).toString();
-                systemTran.setChosenVoice(item);
-                Log.e("Choosing Voice", item);
-            }
+        RxAdapterView.itemSelections(source_spinner)
+                .subscribe(position -> {
+                    systemTran.setSource(sourceIDMArray[position]);
+                    sourceHolder = sourceIDMArray[position];
+                });
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
-            }
-        });
-
-        source_spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                Log.e("source_spinner", sourceIDMArray[position]);
-                systemTran.setSource(sourceIDMArray[position]);
-                sourceHolder = sourceIDMArray[position];
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
-            }
-        });
-
-        target_spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                Log.e("target_spinner", sourceIDMArray[position]);
-                systemTran.setTarget(sourceIDMArray[position]);
-                targetHolder = sourceIDMArray[position];
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
-            }
-        });
+        RxAdapterView.itemSelections(target_spinner)
+                .subscribe(position -> {
+                    systemTran.setTarget(sourceIDMArray[position]);
+                    targetHolder = sourceIDMArray[position];
+                });
     }
 
     private void setupDataStructions() {
@@ -234,34 +238,15 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
         modelArray = getResources().getStringArray(R.array.Broadband_model_ibm_array);
     }
 
-    private boolean checkInternetConnection() {
-        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-        boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
-        // Check for network connections
-        if (isConnected) {
-            return true;
-        } else {
-            Toast.makeText(this, " No Internet Connection available ", Toast.LENGTH_LONG).show();
-            return false;
-        }
-    }
-
-    protected void makeRequest() {
-        ActivityCompat.requestPermissions(this,
-                new String[]{Manifest.permission.RECORD_AUDIO}, MicrophoneHelper.REQUEST_PERMISSION);
-    }
 
     private void showTextOnUi(final String str) {
         runOnUiThread(() -> editText.setText(str));
     }
 
     private void updateChat(final String str) {
-        runOnUiThread(() -> {
-            Message input = new Message(delegateUser, editText.getText().toString(),str);
-            chatAdapter.addMessage(input);
-            editText.setText(" ");
-        });
+        Message input = new Message(delegateUser, editText.getText().toString(), str);
+        chatAdapter.addMessage(input);
+        editText.setText(" ");
     }
 
     @Override
@@ -286,34 +271,7 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
 
     @Override
     public void disconnected() {
-        presenter.translate(editText.getText().toString());
-        if (delegateUser.equals("0")) {
-            systemTran.setTarget(targetHolder);
-            systemTran.setSource(sourceHolder);
-            systemTran.setGetVoice(false);
-        }
+
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode) {
-            case REQUEST_RECORD_AUDIO_PERMISSION:
-                boolean permissionToRecordAccepted = grantResults[0] == PackageManager.PERMISSION_GRANTED;
-                break;
-            case RECORD_REQUEST_CODE: {
-                if (grantResults.length == 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                    Log.i(TAG, "Permission has been denied by user");
-                } else {
-                    Log.i(TAG, "Permission has been granted by user");
-                }
-                return;
-            }
-            case MicrophoneHelper.REQUEST_PERMISSION: {
-                if (grantResults.length > 0 && grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this, "Permission to record audio denied", Toast.LENGTH_SHORT).show();
-                }
-            }
-        }
-    }
 }
