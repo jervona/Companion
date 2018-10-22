@@ -1,17 +1,13 @@
 package nyc.c4q.translator;
 
 
-import android.Manifest;
-import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
+
 import android.support.constraint.Group;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.EditText;
@@ -29,6 +25,7 @@ import com.tbruyelle.rxpermissions2.RxPermissions;
 
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -46,35 +43,22 @@ import nyc.c4q.translator.dependancies.BaseApp;
 import nyc.c4q.translator.presenter.Presenter;
 import nyc.c4q.translator.singleton.SystemTranslationModel;
 
-public class MainActivity extends AppCompatActivity  implements Contract.View{
+public class MainActivity extends AppCompatActivity implements Contract.View {
 
-    @BindView(R.id.text)
-    EditText editText;
-    @BindView(R.id.voice_spinner)
-    Spinner voice_spinner;
-    @BindView(R.id.source)
-    Spinner source_spinner;
-    @BindView(R.id.target)
-    Spinner target_spinner;
-    @BindView(R.id.mic)
-    FloatingActionButton primaryButton;
-    @BindView(R.id.second_speaker_button)
-    FloatingActionButton secondaryUser;
-    @BindView(R.id.recyclerView)
-    RecyclerView chatRecyclerView;
-    @BindView(R.id.ripple_background)
-    RippleBackground rippleBackground;
-    @BindView(R.id.centerImage)
-    FloatingActionButton imageView;
-    @BindView(R.id.group)
-    Group group1;
-    @BindView(R.id.group2)
-    Group group2;
+    @BindView(R.id.text) EditText editText;
+    @BindView(R.id.voice_spinner) Spinner voice_spinner;
+    @BindView(R.id.source) Spinner source_spinner;
+    @BindView(R.id.target) Spinner target_spinner;
+    @BindView(R.id.mic) FloatingActionButton primaryButton;
+    @BindView(R.id.second_speaker_button) FloatingActionButton secondaryUser;
+    @BindView(R.id.recyclerView) RecyclerView chatRecyclerView;
+    @BindView(R.id.ripple_background) RippleBackground rippleBackground;
+    @BindView(R.id.centerImage) FloatingActionButton imageView;
+    @BindView(R.id.group) Group group1;
+    @BindView(R.id.group2) Group group2;
 
-    @Inject
-    Presenter presenter;
-    @Inject
-    SystemTranslationModel systemTran;
+    @Inject Presenter presenter;
+    @Inject SystemTranslationModel systemTran;
 
 
     private static String TAG = "MainActivity";
@@ -83,18 +67,11 @@ public class MainActivity extends AppCompatActivity  implements Contract.View{
     public StreamPlayer streamPlayer;
     ChatAdapter chatAdapter;
 
-    private List<Message> chatList;
     String[] lan;
     String[] modelArray;
     String[] sourceIDMArray;
 
-    String sourceHolder;
-    String targetHolder;
-
-    String delegateUser;
-
     RxPermissions rxPermissions;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,46 +86,27 @@ public class MainActivity extends AppCompatActivity  implements Contract.View{
         microphoneHelper = new MicrophoneHelper(this);
         rxPermissions = new RxPermissions(this);
         streamPlayer = new StreamPlayer();
-
-
-        if (checkInternetConnection()){
-            group1.setClickable(true);
-        } else{
-            group1.setClickable(false);
-        }
-
-        rxPermissions.request(Manifest.permission.RECORD_AUDIO)
-                .subscribe(granted -> {
-                    if (granted) {
-                        recordToggle();
-                    } else {
-                        Toast.makeText(application, "Needs Permission to Record", Toast.LENGTH_SHORT).show();
-                    }
-                });
-
-
+        presenter.setView(this);
+        presenter.checkPermission(rxPermissions);
+        presenter.checkInternetConnection();
     }
 
     @OnClick(R.id.translatedMessage)
     public void translatedMessage() {
         systemTran.setGetVoice(true);
-        presenter.translateTextOnly(editText.getText().toString());
+        presenter.translateString(editText.getText().toString());
     }
 
     @OnClick(R.id.mic)
     public void primary() {
+        presenter.primary();
         toggleVisibility();
-        delegateUser = "1";
-        systemTran.setTarget(targetHolder);
-        systemTran.setSource(sourceHolder);
     }
 
     @OnClick(R.id.second_speaker_button)
     public void secondary() {
+        presenter.secondary();
         toggleVisibility();
-        delegateUser = "0";
-        systemTran.setTarget(sourceHolder);
-        systemTran.setSource(targetHolder);
     }
 
     @OnClick(R.id.back)
@@ -157,6 +115,7 @@ public class MainActivity extends AppCompatActivity  implements Contract.View{
             group2.setVisibility(View.VISIBLE);
             group1.setVisibility(View.GONE);
         } else {
+            presenter.addCurrentToChat();
             group1.setVisibility(View.VISIBLE);
             group2.setVisibility(View.GONE);
         }
@@ -188,17 +147,11 @@ public class MainActivity extends AppCompatActivity  implements Contract.View{
     }
 
     public void playVoice(InputStream stream) {
-       streamPlayer.playStream(stream);
-    }
-
-    public boolean checkInternetConnection() {
-        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+        streamPlayer.playStream(stream);
     }
 
     private void setupRecyclerView() {
-        chatList = new ArrayList<>();
+        List<Message> chatList = new ArrayList<>();
         chatAdapter = new ChatAdapter(chatList);
         chatRecyclerView.setAdapter(chatAdapter);
     }
@@ -210,13 +163,13 @@ public class MainActivity extends AppCompatActivity  implements Contract.View{
         RxAdapterView.itemSelections(source_spinner)
                 .subscribe(position -> {
                     systemTran.setSource(sourceIDMArray[position]);
-                    sourceHolder = sourceIDMArray[position];
+                    presenter.setSourceHolder(sourceIDMArray[position]);
                 });
 
         RxAdapterView.itemSelections(target_spinner)
                 .subscribe(position -> {
                     systemTran.setTarget(sourceIDMArray[position]);
-                    targetHolder = sourceIDMArray[position];
+                    presenter.setTargetHolder(sourceIDMArray[position]);
                 });
     }
 
@@ -228,7 +181,7 @@ public class MainActivity extends AppCompatActivity  implements Contract.View{
 
     @Override
     public void playStream(InputStream streamPlayer) {
-      playVoice(streamPlayer);
+        playVoice(streamPlayer);
     }
 
     @Override
@@ -241,4 +194,28 @@ public class MainActivity extends AppCompatActivity  implements Contract.View{
         editText.setText(text);
     }
 
+    @Override
+    public void accessGranted() {
+        recordToggle();
+    }
+
+    @Override
+    public void groupToggle(boolean b) {
+        group1.setClickable(b);
+    }
+
+    @Override
+    public void showToast(String s) {
+        Toast.makeText(this, s, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void updateChatList(List<Message> chatList) {
+        chatAdapter.updateTicketListItems(chatList);
+    }
+
+    @Override
+    public void setPresenter(Contract.Presenter p) {
+
+    }
 }

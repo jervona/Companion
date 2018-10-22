@@ -10,8 +10,7 @@ public class Message {
     private String translatedMessage;
 
 
-    public Message() {
-    }
+
 
     public Message(String id, String message,String translatedMessage) {
         this.id = id;

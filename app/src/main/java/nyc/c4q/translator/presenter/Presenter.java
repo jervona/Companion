@@ -1,12 +1,15 @@
 package nyc.c4q.translator.presenter;
 
 
-
+import android.Manifest;
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.support.annotation.NonNull;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.ibm.watson.developer_cloud.android.library.audio.MicrophoneInputStream;
-import com.ibm.watson.developer_cloud.android.library.audio.StreamPlayer;
 import com.ibm.watson.developer_cloud.android.library.audio.utils.ContentType;
 import com.ibm.watson.developer_cloud.http.ServiceCallback;
 import com.ibm.watson.developer_cloud.language_translator.v2.LanguageTranslator;
@@ -18,41 +21,56 @@ import com.ibm.watson.developer_cloud.speech_to_text.v1.model.SpeechResults;
 import com.ibm.watson.developer_cloud.speech_to_text.v1.websocket.BaseRecognizeCallback;
 import com.ibm.watson.developer_cloud.text_to_speech.v1.TextToSpeech;
 import com.ibm.watson.developer_cloud.text_to_speech.v1.model.Voice;
+import com.tbruyelle.rxpermissions2.RxPermissions;
 
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
+import nyc.c4q.translator.Pojo.Message;
+import nyc.c4q.translator.R;
 import nyc.c4q.translator.contract.Contract;
 import nyc.c4q.translator.singleton.SystemTranslationModel;
 
 /**
  * Created by jervon.arnoldd on 6/2/18.
  */
-
-public class Presenter {
+@Singleton
+public class Presenter implements Contract.Presenter {
     private TextToSpeech textToSpeechService;
     private LanguageTranslator languageTranslatorService;
     private SpeechToText speechToTextService;
     private SystemTranslationModel systemTran;
     private RecognizeOptions recognizeOptions;
     private Contract.View vml;
+    @Inject Context context;
+    private String delegateUser;
+    private String sourceHolder;
+    private String targetHolder;
+    private String tempOrginal;
+    private String tempTranslation;
+    private List<Message> chatList;
+
 
     @Inject
     Presenter(TextToSpeech textToSpeechService, LanguageTranslator languageTranslatorService,
-              SpeechToText speechToTextService,SystemTranslationModel systemTran,Contract.View vml) {
+              SpeechToText speechToTextService, SystemTranslationModel systemTran) {
+
         this.textToSpeechService = textToSpeechService;
         this.languageTranslatorService = languageTranslatorService;
         this.speechToTextService = speechToTextService;
-        this.systemTran=systemTran;
-        this.vml=vml;
+        this.systemTran = systemTran;
+        chatList= new ArrayList<>();
     }
 
 
@@ -69,19 +87,20 @@ public class Presenter {
         return Single.create(emitter ->
                 textToSpeechService.synthesize(str, voices(systemTran.getChosenVoice()))
                         .enqueue(new ServiceCallback<InputStream>() {
-            @Override
-            public void onResponse(InputStream response) {
-                emitter.onSuccess(response);
-            }
-            @Override
-            public void onFailure(Exception e) {
-               emitter.onError(e);
-            }
-        }));
+                            @Override
+                            public void onResponse(InputStream response) {
+                                emitter.onSuccess(response);
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                emitter.onError(e);
+                            }
+                        }));
 
     }
 
-    public Single<String> textTranslationSingle(String str) {
+    private Single<String> textTranslationSingle(String str) {
         TranslateOptions translateOptions = new TranslateOptions.Builder()
                 .addText(str)
                 .source(systemTran.getSource())
@@ -90,21 +109,21 @@ public class Presenter {
 
         return Single.create(emitter -> languageTranslatorService.translate(translateOptions)
                 .enqueue(new ServiceCallback<TranslationResult>() {
-            @Override
-            public void onResponse(TranslationResult response) {
-                emitter.onSuccess(response.getTranslations().get(0).getTranslation());
-                vml.showText(response.getTranslations().get(0).getTranslation());
-            }
+                    @Override
+                    public void onResponse(TranslationResult response) {
+                        emitter.onSuccess(response.getTranslations().get(0).getTranslation());
+                        vml.showText(response.getTranslations().get(0).getTranslation());
+                    }
 
-            @Override
-            public void onFailure(Exception e) {
-                emitter.onError(e);
-            }
-        }));
+                    @Override
+                    public void onFailure(Exception e) {
+                        emitter.onError(e);
+                    }
+                }));
     }
 
     @NonNull
-    public Observable<SpeechResults> speechToVoiceObservable(MicrophoneInputStream capture) {
+    private Observable<SpeechResults> speechToVoiceObservable(MicrophoneInputStream capture) {
         recognizeOptions = getRecognizeOptions();
         return Observable.create(emitter -> {
             BaseRecognizeCallback callback = new BaseRecognizeCallback() {
@@ -112,6 +131,7 @@ public class Presenter {
                 public void onTranscription(SpeechResults speechResults) {
                     emitter.onNext(speechResults);
                 }
+
                 @Override
                 public void onDisconnected() {
                     Log.e("onDisconnected", "Disconnected");
@@ -128,28 +148,37 @@ public class Presenter {
     }
 
 
-
-    public void startRecording(MicrophoneInputStream capture) {
+    public void start(MicrophoneInputStream capture) {
         speechToVoiceObservable(capture)
                 .subscribeOn(Schedulers.io())
                 .map(speechResults -> speechResults.getResults().get(0).getAlternatives().get(0).getTranscript())
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext(string -> vml.showText(string))
+                .doOnNext(string -> {
+                            vml.showText(string);
+                            tempOrginal = string;
+                        }
+                )
                 .doOnError(throwable -> Log.e("Speech 2 txt Error", throwable.getMessage()))
                 .takeLast(1)
                 .map(this::textTranslationSingle)
                 .doOnNext(stringSingle -> Log.e("Translation :", stringSingle.toString()))
                 .doOnError(throwable -> Log.e("Translation Error", throwable.getMessage()))
                 .flatMap(Single::toObservable)
+                .doOnNext(translatedString -> tempTranslation=translatedString)
                 .map(this::voiceSingle)
                 .flatMap(Single::toObservable)
                 .subscribe(
-                        (InputStream inputStream) -> {
-                            vml.playStream(inputStream);
-                        },
+                        (InputStream inputStream) -> vml.playStream(inputStream),
                         throwable -> Log.e("Error", throwable.getMessage()));
     }
 
+    private void translatingTextOnly(String s) {
+        textTranslationSingle(s)
+                .flatMap(string -> voiceSingle(string))
+                .subscribe(
+                        inputStream -> vml.playStream(inputStream),
+                        throwable -> Log.e("Error", throwable.getMessage()));
+    }
 
     private Voice voices(String voiceChoice) {
         HashMap<String, Voice> voiceHashMap = new HashMap<>();
@@ -184,11 +213,86 @@ public class Presenter {
         return broadBandHashMap.get(source);
     }
 
-    public void translateTextOnly(String s) {
-       textTranslationSingle(s)
-                .flatMap(string -> voiceSingle(string))
-                .subscribe(
-                        inputStream -> vml.playStream(inputStream),
-                        throwable -> Log.e("Error", throwable.getMessage()));
+    public void checkInternetConnection() {
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        vml.groupToggle(activeNetwork != null && activeNetwork.isConnectedOrConnecting());
+    }
+
+    public void primary() {
+        delegateUser = "1";
+        systemTran.setTarget(targetHolder);
+        systemTran.setSource(sourceHolder);
+    }
+
+    public void secondary() {
+        delegateUser = "0";
+        systemTran.setTarget(sourceHolder);
+        systemTran.setSource(targetHolder);
+    }
+
+    @Override
+    public void setView(Contract.View view) {
+        vml = view;
+    }
+
+    @Override
+    public void start() {
+
+    }
+
+    @Override
+    public void translateString(String str) {
+        translatingTextOnly(str);
+    }
+
+
+    @Override
+    public void startRecording(MicrophoneInputStream capture) {
+        start(capture);
+    }
+
+    @Override
+    public void getModels() {
+
+    }
+
+    @Override
+    public void checkPermission(RxPermissions rxPermissions) {
+        rxPermissions.request(Manifest.permission.RECORD_AUDIO)
+                .subscribe(granted -> {
+                    if (granted) {
+                        vml.accessGranted();
+                    } else {
+                        vml.showToast("Needs Permission to Record");
+                    }
+                }, throwable -> Log.e("Error Permissions", throwable.toString()), this::unsubscribe);
+    }
+
+    @Override
+    public void setSourceHolder(String s) {
+        sourceHolder = s;
+    }
+
+    @Override
+    public void setTargetHolder(String s) {
+        targetHolder = s;
+    }
+
+    @Override
+    public void addCurrentToChat() {
+        Message tempPojo= new Message(delegateUser,tempOrginal,tempTranslation);
+        chatList.add(tempPojo);
+        vml.updateChatList(chatList);
+    }
+
+    @Override
+    public void subscribe() {
+
+    }
+
+    @Override
+    public void unsubscribe() {
+
     }
 }
