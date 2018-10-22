@@ -1,12 +1,10 @@
 package nyc.c4q.translator.singleton;
 
-import javax.inject.Singleton;
-
-import dagger.Module;
 
 /**
  * Created by jervon.arnoldd on 6/2/18.
  */
+
 
 public class SystemTranslationModel {
 
@@ -14,7 +12,6 @@ public class SystemTranslationModel {
     private String source;
     private String chosenVoice;
     private  boolean getVoice;
-
 
     public String getTarget() {
         return target;
