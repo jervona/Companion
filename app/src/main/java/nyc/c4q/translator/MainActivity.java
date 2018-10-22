@@ -18,6 +18,7 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+
 import com.ibm.watson.developer_cloud.android.library.audio.MicrophoneHelper;
 import com.ibm.watson.developer_cloud.android.library.audio.MicrophoneInputStream;
 import com.ibm.watson.developer_cloud.android.library.audio.StreamPlayer;
@@ -45,7 +46,7 @@ import nyc.c4q.translator.dependancies.BaseApp;
 import nyc.c4q.translator.presenter.Presenter;
 import nyc.c4q.translator.singleton.SystemTranslationModel;
 
-public class MainActivity extends AppCompatActivity implements Contract.View {
+public class MainActivity extends AppCompatActivity  implements Contract.View{
 
     @BindView(R.id.text)
     EditText editText;
@@ -76,12 +77,10 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
     SystemTranslationModel systemTran;
 
 
-    private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
     private static String TAG = "MainActivity";
-    private static final int RECORD_REQUEST_CODE = 101;
     private MicrophoneHelper microphoneHelper;
 
-    StreamPlayer streamPlayer;
+    public StreamPlayer streamPlayer;
     ChatAdapter chatAdapter;
 
     private List<Message> chatList;
@@ -109,20 +108,21 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
         setSpinners();
         microphoneHelper = new MicrophoneHelper(this);
         rxPermissions = new RxPermissions(this);
+        streamPlayer = new StreamPlayer();
 
-        if (presenter.checkInternetConnection()){
+
+        if (checkInternetConnection()){
             group1.setClickable(true);
         } else{
             group1.setClickable(false);
         }
-
 
         rxPermissions.request(Manifest.permission.RECORD_AUDIO)
                 .subscribe(granted -> {
                     if (granted) {
                         recordToggle();
                     } else {
-                        Toast.makeText(application, "Need Permissions to Record", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(application, "Needs Permission to Record", Toast.LENGTH_SHORT).show();
                     }
                 });
 
@@ -131,12 +131,8 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
 
     @OnClick(R.id.translatedMessage)
     public void translatedMessage() {
-        presenter.textTranslationSingle(editText.getText().toString())
-                .flatMap(s -> presenter.voiceSingle(s))
-                .subscribe(
-                        inputStream -> streamPlayer.playStream(inputStream),
-                        throwable -> Log.e("Error", throwable.getMessage()));
         systemTran.setGetVoice(true);
+        presenter.translateTextOnly(editText.getText().toString());
     }
 
     @OnClick(R.id.mic)
@@ -183,30 +179,22 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
     }
 
     public void startRecording() {
-
-        streamPlayer = new StreamPlayer();
-
         MicrophoneInputStream capture = microphoneHelper.getInputStream(true);
-        presenter.speechToVoiceObservable(capture)
-                .subscribeOn(Schedulers.io())
-                .map(speechResults -> speechResults.getResults().get(0).getAlternatives().get(0).getTranscript())
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext(string -> editText.setText(string))
-                .doOnError(throwable -> Log.e("Speech 2 txt Error", throwable.getMessage()))
-                .takeLast(1)
-                .map(string -> presenter.textTranslationSingle(string))
-                .doOnNext(stringSingle -> Log.e("Translation :", stringSingle.toString()))
-                .doOnError(throwable -> Log.e("Translation Error", throwable.getMessage()))
-                .flatMap(Single::toObservable)
-                .map(stringSingle -> presenter.voiceSingle(stringSingle))
-                .flatMap(Single::toObservable)
-                .subscribe(
-                        inputStream -> streamPlayer.playStream(inputStream),
-                        throwable -> Log.e("Error", throwable.getMessage()));
+        presenter.startRecording(capture);
     }
 
     public void stopRecording() {
         microphoneHelper.closeInputStream();
+    }
+
+    public void playVoice(InputStream stream) {
+       streamPlayer.playStream(stream);
+    }
+
+    public boolean checkInternetConnection() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
     }
 
     private void setupRecyclerView() {
@@ -238,40 +226,19 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
         modelArray = getResources().getStringArray(R.array.Broadband_model_ibm_array);
     }
 
-
-    private void showTextOnUi(final String str) {
-        runOnUiThread(() -> editText.setText(str));
-    }
-
-    private void updateChat(final String str) {
-        Message input = new Message(delegateUser, editText.getText().toString(), str);
-        chatAdapter.addMessage(input);
-        editText.setText(" ");
-    }
-
     @Override
-    public void playStream(InputStream stream) {
-        streamPlayer = new StreamPlayer();
-        streamPlayer.playStream(stream);
+    public void playStream(InputStream streamPlayer) {
+      playVoice(streamPlayer);
     }
 
     @Override
     public void showErrorMessage() {
+
     }
 
     @Override
     public void showText(String text) {
-        showTextOnUi(text);
-    }
-
-    @Override
-    public void sendMessage(String message) {
-        runOnUiThread(() -> updateChat(message));
-    }
-
-    @Override
-    public void disconnected() {
-
+        editText.setText(text);
     }
 
 }
