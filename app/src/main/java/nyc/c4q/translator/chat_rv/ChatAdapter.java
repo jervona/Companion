@@ -53,21 +53,18 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatViewHolder> {
         return position;
     }
 
-
-    public void addMessage(Message input) {
-        chatList.add(input);
-        notifyItemInserted(chatList.size());
-        notifyItemRangeChanged(0, getItemCount());
-    }
-
-
-
     public void updateTicketListItems(List<Message> messageList) {
-        final ChatAdapterDiffCallback diffCallback = new ChatAdapterDiffCallback(this.chatList, messageList);
-        final DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(diffCallback);
-        this.chatList.clear();
-        this.chatList.addAll(messageList);
-        diffResult.dispatchUpdatesTo(this);
+        if (chatList.size()>0){
+            final ChatAdapterDiffCallback diffCallback = new ChatAdapterDiffCallback(this.chatList, messageList);
+            final DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(diffCallback);
+            this.chatList.clear();
+            this.chatList.addAll(messageList);
+            diffResult.dispatchUpdatesTo(this);
+        }else{
+            this.chatList.clear();
+            this.chatList.addAll(messageList);
+        }
+
     }
 
     @Override

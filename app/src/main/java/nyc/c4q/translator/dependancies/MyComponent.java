@@ -13,7 +13,7 @@ import nyc.c4q.translator.singleton.SystemTranslationModel;
  */
 
 @Singleton
-@Component(modules = {Credentials.class,ContextProvider.class, RenameSoon.class})
+@Component(modules = {Credentials.class,ContextProvider.class, RenameSoon.class,})
 public interface MyComponent {
    void inject(MainActivity activity);
 }
