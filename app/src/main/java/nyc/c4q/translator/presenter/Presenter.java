@@ -73,6 +73,7 @@ public class Presenter implements Contract.Presenter {
         this.translateOptions=translateOption;
         chatList= new ArrayList<>();
         vml.setPresenter(this);
+        systemTran.setGetVoice(true);
     }
 
     private Single<InputStream> voiceSingle(String str) {
