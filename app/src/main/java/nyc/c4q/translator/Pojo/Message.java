@@ -9,9 +9,6 @@ public class Message {
     private String message;
     private String translatedMessage;
 
-
-
-
     public Message(String id, String message,String translatedMessage) {
         this.id = id;
         this.message = message;
@@ -25,7 +22,6 @@ public class Message {
     public void setTranslatedMessage(String translatedMessage) {
         this.translatedMessage = translatedMessage;
     }
-
 
     public String getId() {
         return id;

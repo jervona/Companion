@@ -25,7 +25,6 @@ import com.tbruyelle.rxpermissions2.RxPermissions;
 
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -33,9 +32,6 @@ import javax.inject.Inject;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-import io.reactivex.Single;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.schedulers.Schedulers;
 import nyc.c4q.translator.chat_rv.ChatAdapter;
 import nyc.c4q.translator.contract.Contract;
 import nyc.c4q.translator.Pojo.Message;
@@ -57,7 +53,7 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
     @BindView(R.id.group) Group group1;
     @BindView(R.id.group2) Group group2;
 
-    @Inject Presenter presenter;
+    Contract.Presenter presenter;
     @Inject SystemTranslationModel systemTran;
 
 
@@ -89,6 +85,7 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
         presenter.setView(this);
         presenter.checkPermission(rxPermissions);
         presenter.checkInternetConnection();
+        presenter.getModels();
     }
 
     @OnClick(R.id.translatedMessage)
@@ -99,26 +96,17 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
 
     @OnClick(R.id.mic)
     public void primary() {
-        presenter.primary();
-        toggleVisibility();
+        presenter.primaryUser();
     }
 
     @OnClick(R.id.second_speaker_button)
     public void secondary() {
-        presenter.secondary();
-        toggleVisibility();
+        presenter.secondaryUser();
     }
 
     @OnClick(R.id.back)
-    public void toggleVisibility() {
-        if (group2.getVisibility() == View.GONE) {
-            group2.setVisibility(View.VISIBLE);
-            group1.setVisibility(View.GONE);
-        } else {
-            presenter.addCurrentToChat();
-            group1.setVisibility(View.VISIBLE);
-            group2.setVisibility(View.GONE);
-        }
+   public void backButtonClicked(){
+        presenter.backButtonClicked();
     }
 
     public void recordToggle() {
@@ -205,8 +193,8 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
     }
 
     @Override
-    public void showToast(String s) {
-        Toast.makeText(this, s, Toast.LENGTH_SHORT).show();
+    public void showToast(String message) {
+        Toast.makeText(this, message    , Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -215,7 +203,19 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
     }
 
     @Override
-    public void setPresenter(Contract.Presenter p) {
+    public void toggleVisibility() {
+        if (group2.getVisibility() == View.GONE) {
+            group2.setVisibility(View.VISIBLE);
+            group1.setVisibility(View.GONE);
+        } else {
+            presenter.addCurrentToChat();
+            group1.setVisibility(View.VISIBLE);
+            group2.setVisibility(View.GONE);
+        }
+    }
 
+    @Override
+    public void setPresenter(Contract.Presenter p) {
+         presenter=p;
     }
 }

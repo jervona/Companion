@@ -2,8 +2,11 @@ package nyc.c4q.translator.dependancies;
 
 import android.content.Context;
 
+import com.ibm.watson.developer_cloud.android.library.audio.utils.ContentType;
 import com.ibm.watson.developer_cloud.language_translator.v2.LanguageTranslator;
+import com.ibm.watson.developer_cloud.language_translator.v2.model.TranslateOptions;
 import com.ibm.watson.developer_cloud.speech_to_text.v1.SpeechToText;
+import com.ibm.watson.developer_cloud.speech_to_text.v1.model.RecognizeOptions;
 import com.ibm.watson.developer_cloud.text_to_speech.v1.TextToSpeech;
 
 import javax.inject.Singleton;
@@ -17,7 +20,7 @@ import nyc.c4q.translator.R;
  */
 
 @Module
-public class Credentials {
+class Credentials {
 
     @Provides
     @Singleton
@@ -48,6 +51,22 @@ public class Credentials {
         String speechToTextPassword = context.getResources().getString(R.string.speech_to_text_password);
         speechToTextService.setUsernameAndPassword(speechToTextUser, speechToTextPassword);
         return speechToTextService;
+    }
+
+
+    @Provides
+    @Singleton
+    RecognizeOptions.Builder provideRecognizeOptions() {
+        return new RecognizeOptions.Builder()
+                .contentType(ContentType.OPUS.toString())
+                .interimResults(true)
+                .inactivityTimeout(4000);
+    }
+
+    @Provides
+    @Singleton
+    TranslateOptions.Builder provideTranslateOptions() {
+       return  new TranslateOptions.Builder();
     }
 
 }
