@@ -90,7 +90,6 @@ public class MainActivity extends AppCompatActivity implements Contract.View {
 
     @OnClick(R.id.translatedMessage)
     public void translatedMessage() {
-        systemTran.setGetVoice(true);
         presenter.translateString(editText.getText().toString());
     }
 
