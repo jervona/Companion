@@ -14,12 +14,9 @@ import nyc.c4q.translator.singleton.SystemTranslationModel;
  */
 @Module
 class RenameSoon {
-
     @Provides
     @Singleton
     SystemTranslationModel provideSystemTran() {
         return new SystemTranslationModel();
     }
-
-
 }

@@ -21,14 +21,11 @@ public interface Contract {
         void playStream(InputStream streamPlayer);
         void showErrorMessage();
         void showText(String text);
-
         void accessGranted();
-
         void groupToggle(boolean b);
-
-        void showToast(String s);
-
+        void showToast(String message);
         void updateChatList(List<Message> chatList);
+        void toggleVisibility();
     }
 
     interface Presenter  extends BasePresenter {
@@ -37,13 +34,14 @@ public interface Contract {
         void translateString(String str);
         void startRecording(MicrophoneInputStream capture);
         void getModels();
-
         void checkPermission(RxPermissions rxPermissions);
-
-
-        void setSourceHolder(String s);
-        void setTargetHolder(String s);
-
+        void setSourceHolder(String source);
+        void setTargetHolder(String target);
         void addCurrentToChat();
+        void backButtonClicked();
+        void primaryUser();
+        void secondaryUser();
+
+        void checkInternetConnection();
     }
 }

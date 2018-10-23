@@ -7,16 +7,15 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.support.annotation.NonNull;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.ibm.watson.developer_cloud.android.library.audio.MicrophoneInputStream;
-import com.ibm.watson.developer_cloud.android.library.audio.utils.ContentType;
 import com.ibm.watson.developer_cloud.http.ServiceCallback;
 import com.ibm.watson.developer_cloud.language_translator.v2.LanguageTranslator;
 import com.ibm.watson.developer_cloud.language_translator.v2.model.TranslateOptions;
 import com.ibm.watson.developer_cloud.language_translator.v2.model.TranslationResult;
 import com.ibm.watson.developer_cloud.speech_to_text.v1.SpeechToText;
 import com.ibm.watson.developer_cloud.speech_to_text.v1.model.RecognizeOptions;
+import com.ibm.watson.developer_cloud.speech_to_text.v1.model.SpeechModel;
 import com.ibm.watson.developer_cloud.speech_to_text.v1.model.SpeechResults;
 import com.ibm.watson.developer_cloud.speech_to_text.v1.websocket.BaseRecognizeCallback;
 import com.ibm.watson.developer_cloud.text_to_speech.v1.TextToSpeech;
@@ -38,7 +37,6 @@ import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
 import nyc.c4q.translator.Pojo.Message;
-import nyc.c4q.translator.R;
 import nyc.c4q.translator.contract.Contract;
 import nyc.c4q.translator.singleton.SystemTranslationModel;
 
@@ -51,9 +49,10 @@ public class Presenter implements Contract.Presenter {
     private LanguageTranslator languageTranslatorService;
     private SpeechToText speechToTextService;
     private SystemTranslationModel systemTran;
-    private RecognizeOptions recognizeOptions;
+    private RecognizeOptions.Builder recognizeOptions;
     private Contract.View vml;
     @Inject Context context;
+    private TranslateOptions.Builder translateOptions;
     private String delegateUser;
     private String sourceHolder;
     private String targetHolder;
@@ -64,23 +63,16 @@ public class Presenter implements Contract.Presenter {
 
     @Inject
     Presenter(TextToSpeech textToSpeechService, LanguageTranslator languageTranslatorService,
-              SpeechToText speechToTextService, SystemTranslationModel systemTran) {
+              SpeechToText speechToTextService, SystemTranslationModel systemTran,RecognizeOptions.Builder options, TranslateOptions.Builder translateOption ) {
 
         this.textToSpeechService = textToSpeechService;
         this.languageTranslatorService = languageTranslatorService;
         this.speechToTextService = speechToTextService;
         this.systemTran = systemTran;
+        this.recognizeOptions=options;
+        this.translateOptions=translateOption;
         chatList= new ArrayList<>();
-    }
-
-
-    private RecognizeOptions getRecognizeOptions() {
-        return new RecognizeOptions.Builder()
-                .contentType(ContentType.OPUS.toString())
-                .model(getBroadBand(systemTran.getSource()))
-                .interimResults(true)
-                .inactivityTimeout(4000)
-                .build();
+        vml.setPresenter(this);
     }
 
     private Single<InputStream> voiceSingle(String str) {
@@ -91,23 +83,20 @@ public class Presenter implements Contract.Presenter {
                             public void onResponse(InputStream response) {
                                 emitter.onSuccess(response);
                             }
-
                             @Override
                             public void onFailure(Exception e) {
                                 emitter.onError(e);
                             }
                         }));
-
     }
 
     private Single<String> textTranslationSingle(String str) {
-        TranslateOptions translateOptions = new TranslateOptions.Builder()
+        translateOptions
                 .addText(str)
                 .source(systemTran.getSource())
-                .target(systemTran.getTarget())
-                .build();
+                .target(systemTran.getTarget());
 
-        return Single.create(emitter -> languageTranslatorService.translate(translateOptions)
+        return Single.create(emitter -> languageTranslatorService.translate(translateOptions.build())
                 .enqueue(new ServiceCallback<TranslationResult>() {
                     @Override
                     public void onResponse(TranslationResult response) {
@@ -124,7 +113,7 @@ public class Presenter implements Contract.Presenter {
 
     @NonNull
     private Observable<SpeechResults> speechToVoiceObservable(MicrophoneInputStream capture) {
-        recognizeOptions = getRecognizeOptions();
+        recognizeOptions.model(getBroadBand(systemTran.getSource()));
         return Observable.create(emitter -> {
             BaseRecognizeCallback callback = new BaseRecognizeCallback() {
                 @Override
@@ -143,10 +132,9 @@ public class Presenter implements Contract.Presenter {
                     emitter.onError(e);
                 }
             };
-            speechToTextService.recognizeUsingWebSocket(capture, getRecognizeOptions(), callback);
+            speechToTextService.recognizeUsingWebSocket(capture, recognizeOptions.build(), callback);
         });
     }
-
 
     public void start(MicrophoneInputStream capture) {
         speechToVoiceObservable(capture)
@@ -174,7 +162,7 @@ public class Presenter implements Contract.Presenter {
 
     private void translatingTextOnly(String s) {
         textTranslationSingle(s)
-                .flatMap(string -> voiceSingle(string))
+                .flatMap(this::voiceSingle)
                 .subscribe(
                         inputStream -> vml.playStream(inputStream),
                         throwable -> Log.e("Error", throwable.getMessage()));
@@ -196,6 +184,7 @@ public class Presenter implements Contract.Presenter {
         voiceHashMap.put("Emi-Japan", Voice.JA_EMI);
         voiceHashMap.put("Sofia-Spanish(LA)", Voice.LA_SOFIA);
         voiceHashMap.put("Isabela-Spanish(LA)", Voice.PT_ISABELA);
+
         return voiceHashMap.get(voiceChoice);
     }
 
@@ -219,16 +208,32 @@ public class Presenter implements Contract.Presenter {
         vml.groupToggle(activeNetwork != null && activeNetwork.isConnectedOrConnecting());
     }
 
-    public void primary() {
+    private void primary() {
         delegateUser = "1";
         systemTran.setTarget(targetHolder);
         systemTran.setSource(sourceHolder);
     }
 
-    public void secondary() {
+    private void secondary() {
         delegateUser = "0";
         systemTran.setTarget(sourceHolder);
         systemTran.setSource(targetHolder);
+    }
+
+    private Observable<List<SpeechModel>> checkForListUpdate() {
+        return Observable.create(emitter -> speechToTextService.getModels()
+                .enqueue(new ServiceCallback<List<SpeechModel>>() {
+                    @Override
+                    public void onResponse(List<SpeechModel> response) {
+                        emitter.onNext(response);
+                        System.out.println(response);
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        emitter.onError(e);
+                    }
+                }));
     }
 
     @Override
@@ -254,7 +259,6 @@ public class Presenter implements Contract.Presenter {
 
     @Override
     public void getModels() {
-
     }
 
     @Override
@@ -284,6 +288,24 @@ public class Presenter implements Contract.Presenter {
         Message tempPojo= new Message(delegateUser,tempOrginal,tempTranslation);
         chatList.add(tempPojo);
         vml.updateChatList(chatList);
+    }
+
+
+    @Override
+    public void backButtonClicked() {
+        vml.toggleVisibility();
+    }
+
+    @Override
+    public void primaryUser() {
+        primary();
+        vml.toggleVisibility();
+    }
+
+    @Override
+    public void secondaryUser() {
+        secondary();
+        vml.toggleVisibility();
     }
 
     @Override
